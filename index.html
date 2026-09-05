@@ -91,7 +91,7 @@
     }
 
     function generateCase() {
-      let age = rand(21, 75);
+      let age = rand(18, 117);
       let sex = Math.random() < 0.5 ? 'Male' : 'Female';
       
       let cDiff = rand(-22, 22);
@@ -266,7 +266,7 @@
         { label: "Beta VLDL Triglycerides", val: `${l.bVldlTg} mg/dL`, flag: isHigh(l.bVldlTg, 15) ? "HIGH" : "" },
         { label: "Chylomicron Cholesterol", val: l.chyloC > 0 ? `${l.chyloC} mg/dL` : "Absent", flag: l.chyloC > 0 ? "HIGH" : "" },
         { label: "Chylomicron Triglycerides", val: l.chyloTg > 0 ? `${l.chyloTg} mg/dL` : "Absent", flag: l.chyloTg > 0 ? "HIGH" : "" },
-        { label: "Lipoprotein X (LpX)", val: l.lpx ? "POSITIVE" : "Negative", flag: l.lpx ? "HIGH" : "" },
+        { label: "Lipoprotein X", val: l.lpx ? "POSITIVE" : "Negative", flag: l.lpx ? "HIGH" : "" },
         { label: "C-Diff Check", val: `${l.cDiff} (${currentCase.cDiffStatus})`, flag: "" }
       ];
 
