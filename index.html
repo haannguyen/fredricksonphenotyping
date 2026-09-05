@@ -92,7 +92,6 @@ HTML
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
-  // Target Phenotype Weighting Engine
   function getWeightedTarget() {
     const weights = [
       { target: "Type IIb", weight: 25 },
@@ -135,7 +134,6 @@ HTML
     let apob = rand(40, 160);
     let vldlC = rand(10, 60);
 
-    // Generate specific parameters to hit weighted phenotype targets
     switch (target) {
       case "Normal":
         ldlC = rand(70, 125);
@@ -187,7 +185,7 @@ HTML
       case "Type V":
         ldlC = rand(50, 110);
         vldlTg = rand(300, 600);
-        chyloTg = rand(301, 800); // Strictly > 100 to trigger Type V
+        chyloTg = rand(301, 800);
         chyloC = rand(40, 120);
         biochemTrig = rand(1000, 3000);
         break;
@@ -208,14 +206,12 @@ HTML
     let phenotype = "";
     let rationale = "";
 
-    // Step 1: C-Diff Check
     let cDiffStatus = "Accept";
     if (Math.abs(labs.cDiff) > 18.0) {
       if (labs.biochemTrig < 700) cDiffStatus = "Repeat";
       else cDiffStatus = "Review gel";
     }
 
-    // Step 2: LpX Check
     if (labs.lpx) {
       comments.push("CV64");
       phenotype = "LpX Cholestatic";
@@ -223,7 +219,6 @@ HTML
       return { labs, phenotype, comments, rationale, cDiffStatus };
     }
 
-    // Step 3: Beta-VLDL Assessment
     if (labs.bVldlC >= 30) {
       phenotype = "Type III";
       comments.push("CV66");
@@ -237,7 +232,6 @@ HTML
       return { labs, phenotype, comments, rationale, cDiffStatus };
     }
 
-    // Step 5: High Triglycerides
     if (labs.biochemTrig > 10000) {
       phenotype = "Type I";
       rationale = "Biochem Triglycerides > 10,000 mg/dL triggers Type I classification (Step 5c).";
@@ -245,7 +239,6 @@ HTML
     }
     if (labs.biochemTrig > 500) comments.push("CV61");
 
-    // Step 7: IDL Subtraction check
     let correctedLdlC = labs.ldlC;
     let idlSubtracted = false;
     if (labs.ldlTg >= 50 && labs.ldlC >= 100 && (labs.ldlTg / labs.ldlC) >= 0.30) {
@@ -255,19 +248,18 @@ HTML
       comments.push("CV59");
     }
 
-    // Step 6: Grid Lookup
     let gridRes = lookupGrid(correctedLdlC, labs.vldlTg, idlSubtracted);
     phenotype = gridRes.phenotype;
     comments.push(...gridRes.comments);
 
-    // Step 8: Strict Chylomicron Assessment (Requires Chylo-Tg > 100 for Type V / Int IV/V)
+    // Step 8: Chylomicron Assessment
     if (labs.chyloTg >= 30 && labs.chyloTg <= 100) {
-      if (["Type IV", "Type V", "Mild Int IV/V", "Int IV/V"].includes(phenotype)) {
+      if (["Type IV", "Mild Type IV", "Type V", "Mild Int IV/V", "Int IV/V"].includes(phenotype)) {
         phenotype = "Type IV";
       }
       comments.push("CV60");
     } else if (labs.chyloTg > 100) {
-      if (["Type IV", "Type V", "Mild Int IV/V", "Int IV/V"].includes(phenotype)) {
+      if (["Type IV", "Mild Type IV", "Type V", "Mild Int IV/V", "Int IV/V"].includes(phenotype)) {
         let chyloRes = evalChyloTable(labs.chyloTg, labs.vldlTg);
         phenotype = chyloRes.phenotype;
         comments.push(...chyloRes.comments);
@@ -290,15 +282,15 @@ HTML
     if (ldl < 30) {
       if (vldlTg < 120) { phenotype = "Not a Fredrickson Phenotype"; comments.push("CV55", "CV70"); }
       else if (vldlTg <= 250) { phenotype = "Mild Type IV"; }
-      else { phenotype = "Type IV or V"; }
+      else { phenotype = "Type IV"; }
     } else if (ldl <= 99) {
       if (vldlTg < 120) { phenotype = "Normal"; }
       else if (vldlTg <= 250) { phenotype = "Mild Type IV"; }
-      else { phenotype = "Type IV or V"; }
+      else { phenotype = "Type IV"; }
     } else if (ldl <= 129) {
       if (vldlTg < 120) { phenotype = "Normal"; }
       else if (vldlTg <= 250) { phenotype = "Mild Type IV"; }
-      else { phenotype = "Type IV or V"; }
+      else { phenotype = "Type IV"; }
     } else if (ldl <= 159) {
       if (vldlTg < 120) { phenotype = "Not a Fredrickson Phenotype"; comments.push("CV55"); }
       else if (vldlTg <= 250) { phenotype = "Mild Type IIb"; }
@@ -327,7 +319,6 @@ HTML
     let comments = [];
     let phenotype = "";
 
-    // Chylo-TG strictly > 100
     if (chyloTg <= 300) {
       if (vldlTg <= 250) {
         phenotype = "Mild Int IV/V";
