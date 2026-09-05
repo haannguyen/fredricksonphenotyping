@@ -11,6 +11,9 @@
     .vertical-list { display: flex; flex-direction: column; gap: 8px; margin: 20px 0; }
     .lab-item { background: #f1f5f9; padding: 10px 14px; border-radius: 6px; font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
     .lab-item span { font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 700; }
+    .flag { font-size: 11px; font-weight: 800; padding: 2px 6px; border-radius: 4px; margin-left: 8px; text-transform: uppercase; }
+    .flag-high { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    .flag-low { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
     .btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 20px; }
     button { padding: 8px 14px; font-weight: 600; font-size: 13px; cursor: pointer; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; transition: all 0.2s; }
     button:hover { background: #f1f5f9; border-color: #94a3b8; }
@@ -64,18 +67,28 @@
     }
 
     function generateCase() {
+      let age = rand(21, 75);
+      let sex = Math.random() < 0.5 ? 'Male' : 'Female';
+      
       let cDiff = rand(-22, 22);
       let lpx = Math.random() < 0.08;
-      let bVldl = rand(0, 35);
+      let bVldlC = rand(0, 35);
+      let bVldlTg = rand(0, 35);
       let ldlC = rand(20, 220);
       let vldlTg = rand(50, 400);
       let chyloTg = rand(0, 350);
+      let chyloC = chyloTg > 0 ? rand(10, 100) : 0;
       let biochemTrig = rand(100, 12000);
       let ldlTg = rand(10, 80);
       let hdlC = rand(20, 70);
+      let lpla = rand(1, 15);
+      let apob = rand(40, 160);
+      let vldlC = rand(10, 60);
+      let tc = ldlC + hdlC + vldlC + chyloC;
 
       currentCase = evaluateFlowchart({
-        cDiff, lpx, bVldl, ldlC, vldlTg, chyloTg, biochemTrig, ldlTg, hdlC
+        age, sex, tc, biochemTrig, lpla, ldlC, ldlTg, apob, hdlC, vldlC, vldlTg,
+        bVldlC, bVldlTg, chyloC, chyloTg, lpx, cDiff
       });
 
       renderLabs();
@@ -99,12 +112,12 @@
         return { labs, phenotype, comments, rationale, cDiffStatus };
       }
 
-      if (labs.bVldl >= 30) {
+      if (labs.bVldlC >= 30) {
         phenotype = "Type III";
         comments.push("CV66");
         rationale = "Beta-VLDL ≥ 30 triggers Type III (Step 3). Added CV66.";
         return { labs, phenotype, comments, rationale, cDiffStatus };
-      } else if (labs.bVldl >= 15 && labs.bVldl < 30) {
+      } else if (labs.bVldlC >= 15 && labs.bVldlC < 30) {
         if (labs.vldlTg <= 250) phenotype = "Mild Type III";
         else phenotype = "Type III";
         comments.push("CV66");
@@ -209,24 +222,46 @@
 
     function renderLabs() {
       const l = currentCase.labs;
+
+      // Flag checks
+      const isHigh = (val, threshold) => val > threshold;
+      const isHdlLow = (hdl, sex) => (sex === 'Male' && hdl < 40) || (sex === 'Female' && hdl < 50);
+
       const labsDisplay = [
-        { label: "C-Diff Check", val: `${l.cDiff} (${currentCase.cDiffStatus})` },
-        { label: "Lipoprotein X (LpX)", val: l.lpx ? "POSITIVE" : "Negative" },
-        { label: "Beta-VLDL Cholesterol", val: `${l.bVldl} mg/dL` },
-        { label: "LDL Cholesterol", val: `${l.ldlC} mg/dL` },
-        { label: "LDL Triglycerides", val: `${l.ldlTg} mg/dL` },
-        { label: "VLDL Triglycerides", val: `${l.vldlTg} mg/dL` },
-        { label: "Chylomicron Triglycerides", val: `${l.chyloTg} mg/dL` },
-        { label: "Biochem Triglycerides", val: `${l.biochemTrig} mg/dL` },
-        { label: "HDL Cholesterol", val: `${l.hdlC} mg/dL` }
+        { label: "Age", val: `${l.age}`, flag: "" },
+        { label: "Sex", val: `${l.sex}`, flag: "" },
+        { label: "Total Cholesterol", val: `${l.tc} mg/dL`, flag: isHigh(l.tc, 200) ? "HIGH" : "" },
+        { label: "Total Triglycerides", val: `${l.biochemTrig} mg/dL`, flag: isHigh(l.biochemTrig, 150) ? "HIGH" : "" },
+        { label: "Lp(a) Cholesterol", val: `${l.lpla} mg/dL`, flag: isHigh(l.lpla, 5) ? "HIGH" : "" },
+        { label: "LDL Cholesterol", val: `${l.ldlC} mg/dL`, flag: isHigh(l.ldlC, 100) ? "HIGH" : "" },
+        { label: "LDL Triglycerides", val: `${l.ldlTg} mg/dL`, flag: isHigh(l.ldlTg, 50) ? "HIGH" : "" },
+        { label: "Apolipoprotein B", val: `${l.apob} mg/dL`, flag: isHigh(l.apob, 90) ? "HIGH" : "" },
+        { label: "HDL Cholesterol", val: `${l.hdlC} mg/dL`, flag: isHdlLow(l.hdlC, l.sex) ? "LOW" : "" },
+        { label: "VLDL Cholesterol", val: `${l.vldlC} mg/dL`, flag: isHigh(l.vldlC, 30) ? "HIGH" : "" },
+        { label: "VLDL Triglycerides", val: `${l.vldlTg} mg/dL`, flag: isHigh(l.vldlTg, 120) ? "HIGH" : "" },
+        { label: "Beta VLDL Cholesterol", val: `${l.bVldlC} mg/dL`, flag: isHigh(l.bVldlC, 15) ? "HIGH" : "" },
+        { label: "Beta VLDL Triglycerides", val: `${l.bVldlTg} mg/dL`, flag: isHigh(l.bVldlTg, 15) ? "HIGH" : "" },
+        { label: "Chylomicron Cholesterol", val: l.chyloC > 0 ? `${l.chyloC} mg/dL` : "Absent", flag: l.chyloC > 0 ? "HIGH" : "" },
+        { label: "Chylomicron Triglycerides", val: l.chyloTg > 0 ? `${l.chyloTg} mg/dL` : "Absent", flag: l.chyloTg > 0 ? "HIGH" : "" },
+        { label: "Lipoprotein X (LpX)", val: l.lpx ? "POSITIVE" : "Negative", flag: l.lpx ? "HIGH" : "" },
+        { label: "C-Diff Check", val: `${l.cDiff} (${currentCase.cDiffStatus})`, flag: "" }
       ];
 
-      document.getElementById('lab-list').innerHTML = labsDisplay.map(d => `
-        <div class="lab-item">
-          <span>${d.label}</span>
-          <strong>${d.val}</strong>
-        </div>
-      `).join('');
+      document.getElementById('lab-list').innerHTML = labsDisplay.map(d => {
+        let flagSpan = "";
+        if (d.flag === "HIGH") flagSpan = `<span class="flag flag-high">High</span>`;
+        if (d.flag === "LOW") flagSpan = `<span class="flag flag-low">Low</span>`;
+
+        return `
+          <div class="lab-item">
+            <span>${d.label}</span>
+            <div>
+              <strong>${d.val}</strong>
+              ${flagSpan}
+            </div>
+          </div>
+        `;
+      }).join('');
 
       document.getElementById('feedback').style.display = 'none';
     }
