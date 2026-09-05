@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Adult LMPP Flowchart Case Generator</title>
+  <style>
+    :root { --primary: #1e40af; --bg: #f8fafc; --card: #ffffff; --text: #0f172a; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); max-width: 900px; margin: 30px auto; padding: 0 20px; line-height: 1.4; }
+    .card { background: var(--card); border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; margin: 20px 0; }
+    .lab-item { background: #f1f5f9; padding: 8px 12px; border-radius: 6px; font-size: 13px; }
+    .lab-item span { display: block; font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; }
+    .btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 20px; }
+    button { padding: 8px 14px; font-weight: 600; font-size: 13px; cursor: pointer; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; transition: all 0.2s; }
+    button:hover { background: #f1f5f9; border-color: #94a3b8; }
+    button.primary { background: var(--primary); color: white; border: none; }
+    button.primary:hover { background: #1d4ed8; }
+    .feedback { margin-top: 20px; padding: 16px; border-radius: 8px; font-weight: 500; display: none; }
+    .correct { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .incorrect { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    .comment-tag { display: inline-block; background: #e0e7ff; color: #3730a3; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 600; margin-right: 4px; }
+  </style>
+</head>
+<body>
+
+  <h2>Adult LMPP Decision Chart Practice Simulator</h2>
+  
+  <div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h3 style="margin: 0;">Patient Case Profile</h3>
+      <button onclick="generateCase()" class="primary">Generate New Case</button>
+    </div>
+
+    <div class="grid" id="lab-grid"></div>
+
+    <p><strong>Determine the Classification / Phenotype:</strong></p>
+    <div class="btn-group">
+      <button onclick="checkAnswer('Normal')">Normal</button>
+      <button onclick="checkAnswer('Type I')">Type I</button>
+      <button onclick="checkAnswer('Type IIa')">Type IIa</button>
+      <button onclick="checkAnswer('Mild Type IIa')">Mild Type IIa</button>
+      <button onclick="checkAnswer('Type IIb')">Type IIb</button>
+      <button onclick="checkAnswer('Mild Type IIb')">Mild Type IIb</button>
+      <button onclick="checkAnswer('Type III')">Type III</button>
+      <button onclick="checkAnswer('Mild Type III')">Mild Type III</button>
+      <button onclick="checkAnswer('Type IV')">Type IV</button>
+      <button onclick="checkAnswer('Mild Type IV')">Mild Type IV</button>
+      <button onclick="checkAnswer('Type V')">Type V</button>
+      <button onclick="checkAnswer('Mild Int IV/V')">Mild Int IV/V</button>
+      <button onclick="checkAnswer('Int IV/V')">Int IV/V</button>
+      <button onclick="checkAnswer('LpX Cholestatic')">LpX Cholestatic Pattern</button>
+      <button onclick="checkAnswer('Not a Fredrickson Phenotype')">Not a Fredrickson Phenotype</button>
+    </div>
+
+    <div id="feedback" class="feedback"></div>
+  </div>
+
+  <script>
+    let currentCase = {};
+
+    function rand(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function generateCase() {
+      // Core raw parameters
+      let cDiff = rand(-22, 22);
+      let lpx = Math.random() < 0.08;
+      let bVldl = rand(0, 35);
+      let ldlC = rand(20, 220);
+      let vldlTg = rand(50, 400);
+      let chyloTg = rand(0, 350);
+      let biochemTrig = rand(100, 12000);
+      let ldlTg = rand(10, 80);
+      let hdlC = rand(20, 70);
+
+      currentCase = evaluateFlowchart({
+        cDiff, lpx, bVldl, ldlC, vldlTg, chyloTg, biochemTrig, ldlTg, hdlC
+      });
+
+      renderLabs();
+    }
+
+    function evaluateFlowchart(labs) {
+      let comments = [];
+      let phenotype = "";
+      let rationale = "";
+
+      // Step 1: Check C-Diff
+      let cDiffStatus = "Accept";
+      if (Math.abs(labs.cDiff) > 18.0) {
+        if (labs.biochemTrig < 700) cDiffStatus = "Repeat";
+        else cDiffStatus = "Review gel";
+      }
+
+      // Step 2: Check LpX
+      if (labs.lpx) {
+        comments.push("CV64");
+        phenotype = "LpX Cholestatic";
+        rationale = "LpX positive overrides standard table (Step 2). Added comment CV64.";
+        return { labs, phenotype, comments, rationale, cDiffStatus };
+      }
+
+      // Step 3: Check Beta-VLDL
+      if (labs.bVldl >= 30) {
+        phenotype = "Type III";
+        comments.push("CV66");
+        rationale = "Beta-VLDL ≥ 30 triggers Type III (Step 3). Added CV66.";
+        return { labs, phenotype, comments, rationale, cDiffStatus };
+      } else if (labs.bVldl >= 15 && labs.bVldl < 30) {
+        if (labs.vldlTg <= 250) phenotype = "Mild Type III";
+        else phenotype = "Type III";
+        comments.push("CV66");
+        rationale = `Beta-VLDL between 15 and 30 with VLDL-Tg of ${labs.vldlTg} triggers ${phenotype} (Step 3). Added CV66.`;
+        return { labs, phenotype, comments, rationale, cDiffStatus };
+      }
+
+      // Step 5: Triglyceride Level Overrides
+      if (labs.biochemTrig > 10000) {
+        phenotype = "Type I";
+        rationale = "Biochem Triglycerides > 10,000 mg/dL triggers Type I classification (Step 5c).";
+        return { labs, phenotype, comments, rationale, cDiffStatus };
+      }
+      if (labs.biochemTrig > 500) comments.push("CV61");
+
+      // Step 7: IDL Subtraction check & Correction
+      let correctedLdlC = labs.ldlC;
+      let idlSubtracted = false;
+      if (labs.ldlTg >= 50 && labs.ldlC >= 100 && (labs.ldlTg / labs.ldlC) >= 0.30) {
+        let idl = labs.ldlTg - ((labs.ldlC - labs.ldlTg) / 3);
+        correctedLdlC = labs.ldlC - idl;
+        idlSubtracted = true;
+        comments.push("CV59");
+      }
+
+      // Step 6: Grid Lookup using Corrected LDL-C and VLDL-Tg
+      let gridRes = lookupGrid(correctedLdlC, labs.vldlTg, idlSubtracted);
+      phenotype = gridRes.phenotype;
+      comments.push(...gridRes.comments);
+
+      // Step 8: Chylomicron Assessment
+      if (labs.chyloTg >= 30 && labs.chyloTg <= 100) {
+        comments.push("CV60");
+      } else if (labs.chyloTg > 100) {
+        if (["Type IV", "Type V", "Mild Int IV/V", "Int IV/V"].includes(phenotype)) {
+          let chyloRes = evalChyloTable(labs.chyloTg, labs.vldlTg);
+          phenotype = chyloRes.phenotype;
+          comments.push(...chyloRes.comments);
+        } else {
+          comments.push("CV60");
+        }
+      }
+
+      // Deduplicate comments
+      comments = [...new Set(comments)];
+      rationale = gridRes.rationale + (idlSubtracted ? " IDL was subtracted per Step 7." : "");
+
+      return { labs, phenotype, comments, rationale, cDiffStatus };
+    }
+
+    function lookupGrid(ldl, vldlTg, idlSubtracted) {
+      let comments = [];
+      let phenotype = "";
+      let rationale = "";
+
+      if (ldl < 30) {
+        if (vldlTg < 120) { phenotype = "Not a Fredrickson Phenotype"; comments.push("CV55", "CV70"); }
+        else if (vldlTg <= 250) { phenotype = "Mild Type IV"; }
+        else { phenotype = "Type IV or V"; }
+      } else if (ldl <= 99) {
+        if (vldlTg < 120) { phenotype = "Normal"; }
+        else if (vldlTg <= 250) { phenotype = "Mild Type IV"; }
+        else { phenotype = "Type IV or V"; }
+      } else if (ldl <= 129) {
+        if (vldlTg < 120) { phenotype = "Normal"; }
+        else if (vldlTg <= 250) { phenotype = "Mild Type IV"; }
+        else { phenotype = "Type IV or V"; }
+      } else if (ldl <= 159) {
+        if (vldlTg < 120) { phenotype = "Not a Fredrickson Phenotype"; comments.push("CV55"); }
+        else if (vldlTg <= 250) { phenotype = "Mild Type IIb"; }
+        else { phenotype = "Type IV"; comments.push("CV73"); }
+      } else if (ldl <= 189) {
+        if (vldlTg < 120) { phenotype = "Mild Type IIa"; }
+        else {
+          phenotype = "Mild Type IIb";
+          comments.push(idlSubtracted ? "CV67" : "CV67");
+        }
+      } else { // LDL >= 190
+        if (vldlTg < 120) {
+          phenotype = "Type IIa";
+          if (!idlSubtracted) comments.push("CV62");
+        } else {
+          phenotype = "Type IIb";
+          if (!idlSubtracted) comments.push("CV63");
+        }
+      }
+
+      rationale = `Mapped to [LDL: ${Math.round(ldl)}, VLDL-Tg: ${vldlTg}] on Profile Grid.`;
+      return { phenotype, comments, rationale };
+    }
+
+    function evalChyloTable(chyloTg, vldlTg) {
+      let comments = [];
+      let phenotype = "";
+      if (chyloTg < 100) {
+        phenotype = "Type IV";
+        comments.push("CV60");
+      } else if (chyloTg <= 300) {
+        if (vldlTg <= 250) phenotype = "Mild Int IV/V";
+        else { phenotype = "Int IV/V"; comments.push("CV57", "CV61"); }
+      } else {
+        phenotype = "Type V";
+        comments.push("CV61");
+      }
+      return { phenotype, comments };
+    }
+
+    function renderLabs() {
+      const l = currentCase.labs;
+      const labsDisplay = [
+        { label: "C-Diff Check", val: `${l.cDiff} (${currentCase.cDiffStatus})` },
+        { label: "Lipoprotein X (LpX)", val: l.lpx ? "POSITIVE" : "Negative" },
+        { label: "Beta-VLDL Cholesterol", val: `${l.bVldl} mg/dL` },
+        { label: "LDL Cholesterol", val: `${l.ldlC} mg/dL` },
+        { label: "LDL Triglycerides", val: `${l.ldlTg} mg/dL` },
+        { label: "VLDL Triglycerides", val: `${l.vldlTg} mg/dL` },
+        { label: "Chylomicron Triglycerides", val: `${l.chyloTg} mg/dL` },
+        { label: "Biochem Triglycerides", val: `${l.biochemTrig} mg/dL` },
+        { label: "HDL Cholesterol", val: `${l.hdlC} mg/dL` }
+      ];
+
+      document.getElementById('lab-grid').innerHTML = labsDisplay.map(d => `
+        <div class="lab-item">
+          <span>${d.label}</span>
+          <strong>${d.val}</strong>
+        </div>
+      `).join('');
+
+      document.getElementById('feedback').style.display = 'none';
+    }
+
+    function checkAnswer(selected) {
+      const fb = document.getElementById('feedback');
+      fb.style.display = 'block';
+
+      const commentTags = currentCase.comments.map(c => `<span class="comment-tag">${c}</span>`).join(' ');
+
+      if (selected === currentCase.phenotype || (selected === "Type IV" && currentCase.phenotype.includes("IV"))) {
+        fb.className = "feedback correct";
+        fb.innerHTML = `<strong>Correct!</strong> Classification: <strong>${currentCase.phenotype}</strong><br>
+                        <strong>Required Comments:</strong> ${commentTags || 'None'}<br><br>
+                        <em>${currentCase.rationale}</em>`;
+      } else {
+        fb.className = "feedback incorrect";
+        fb.innerHTML = `<strong>Incorrect.</strong> Decision flowchart yields: <strong>${currentCase.phenotype}</strong><br>
+                        <strong>Required Comments:</strong> ${commentTags || 'None'}<br><br>
+                        <em>${currentCase.rationale}</em>`;
+      }
+    }
+
+    generateCase();
+  </script>
+</body>
+</html>
