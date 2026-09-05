@@ -22,7 +22,8 @@
     .feedback { margin-top: 20px; padding: 16px; border-radius: 8px; font-weight: 500; display: none; }
     .correct { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
     .incorrect { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-    .comment-tag { display: inline-block; background: #e0e7ff; color: #3730a3; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 600; margin-right: 4px; }
+    .comment-list { margin-top: 8px; padding-left: 0; list-style: none; }
+    .comment-item { background: #e0e7ff; color: #1e1b4b; font-size: 12px; padding: 6px 10px; border-radius: 6px; margin-bottom: 4px; font-weight: 600; }
   </style>
 </head>
 <body>
@@ -60,6 +61,29 @@
   </div>
 
   <script>
+    // Full Biochemistry Comments Dictionary from Decision Chart
+    const cvDescriptions = {
+      "CV55": "Not a Fredrickson Phenotype",
+      "CV56": "Intermediate between Mild Type IV and Type V",
+      "CV57": "Intermediate between Type IV & Type V",
+      "CV59": "Increased IDL comment",
+      "CV60": "Non-fasting comment",
+      "CV61": "Secondary causes of hypertriglyceridemia...",
+      "CV62": "FH comment (≥ 190 LDL Type IIa)",
+      "CV63": "FCH comment (≥ 190 LDL Type IIb)",
+      "CV64": "LpX comment LDL cholesterol",
+      "CV66": "Apo E genotyping comment",
+      "CV67": "FCH comment (Mild IIb; LDL 160-189 & elev tgs)",
+      "CV69": "Secondary causes of low HDL comment",
+      "CV70": "Low lipids comment",
+      "CV71": "Low lipids comment",
+      "CV72": "Trig blank comment",
+      "CV73": "Trait for mild II comment",
+      "CV74": "Trait for II comment",
+      "CV75": "PEDS FH comment",
+      "CV114": "LpX comment LDL triglyceride"
+    };
+
     let currentCase = {};
 
     function rand(min, max) {
@@ -223,7 +247,6 @@
     function renderLabs() {
       const l = currentCase.labs;
 
-      // Flag checks
       const isHigh = (val, threshold) => val > threshold;
       const isHdlLow = (hdl, sex) => (sex === 'Male' && hdl < 40) || (sex === 'Female' && hdl < 50);
 
@@ -270,17 +293,22 @@
       const fb = document.getElementById('feedback');
       fb.style.display = 'block';
 
-      const commentTags = currentCase.comments.map(c => `<span class="comment-tag">${c}</span>`).join(' ');
+      let commentListHtml = "<em>None</em>";
+      if (currentCase.comments.length > 0) {
+        commentListHtml = `<ul class="comment-list">` +
+          currentCase.comments.map(c => `<li class="comment-item"><strong>${c}:</strong> ${cvDescriptions[c] || 'Comment'}</li>`).join('') +
+          `</ul>`;
+      }
 
       if (selected === currentCase.phenotype || (selected === "Type IV" && currentCase.phenotype.includes("IV"))) {
         fb.className = "feedback correct";
-        fb.innerHTML = `<strong>Correct!</strong> Classification: <strong>${currentCase.phenotype}</strong><br>
-                        <strong>Required Comments:</strong> ${commentTags || 'None'}<br><br>
+        fb.innerHTML = `<strong>Correct!</strong> Classification: <strong>${currentCase.phenotype}</strong><br><br>
+                        <strong>Required BioChem Comments:</strong>${commentListHtml}<br>
                         <em>${currentCase.rationale}</em>`;
       } else {
         fb.className = "feedback incorrect";
-        fb.innerHTML = `<strong>Incorrect.</strong> Decision flowchart yields: <strong>${currentCase.phenotype}</strong><br>
-                        <strong>Required Comments:</strong> ${commentTags || 'None'}<br><br>
+        fb.innerHTML = `<strong>Incorrect.</strong> Decision flowchart yields: <strong>${currentCase.phenotype}</strong><br><br>
+                        <strong>Required BioChem Comments:</strong>${commentListHtml}<br>
                         <em>${currentCase.rationale}</em>`;
       }
     }
