@@ -1,3 +1,67 @@
+HTML
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Adult LMPP Flowchart Case Generator</title>
+  <style>
+    :root { --primary: #1e40af; --bg: #f8fafc; --card: #ffffff; --text: #0f172a; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); max-width: 650px; margin: 30px auto; padding: 0 20px; line-height: 1.4; }
+    .card { background: var(--card); border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .vertical-list { display: flex; flex-direction: column; gap: 8px; margin: 20px 0; }
+    .lab-item { background: #f1f5f9; padding: 10px 14px; border-radius: 6px; font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
+    .lab-item span { font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 700; }
+    .flag { font-size: 11px; font-weight: 800; padding: 2px 6px; border-radius: 4px; margin-left: 8px; text-transform: uppercase; }
+    .flag-high { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    .flag-low { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+    .btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 20px; }
+    button { padding: 8px 14px; font-weight: 600; font-size: 13px; cursor: pointer; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; transition: all 0.2s; }
+    button:hover { background: #f1f5f9; border-color: #94a3b8; }
+    button.primary { background: var(--primary); color: white; border: none; }
+    button.primary:hover { background: #1d4ed8; }
+    .feedback { margin-top: 20px; padding: 16px; border-radius: 8px; font-weight: 500; display: none; }
+    .correct { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .incorrect { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    .comment-list { margin-top: 8px; padding-left: 0; list-style: none; }
+    .comment-item { background: #e0e7ff; color: #1e1b4b; font-size: 12px; padding: 6px 10px; border-radius: 6px; margin-bottom: 4px; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+  <h2>Adult LMPP Decision Chart Practice Simulator</h2>
+  
+  <div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+      <h3 style="margin: 0;">Patient Case Profile</h3>
+      <button onclick="generateCase()" class="primary">Generate New Case</button>
+    </div>
+
+    <div class="vertical-list" id="lab-list"></div>
+
+    <p><strong>Determine the Classification / Phenotype:</strong></p>
+    <div class="btn-group">
+      <button onclick="checkAnswer('Normal')">Normal</button>
+      <button onclick="checkAnswer('Type I')">Type I</button>
+      <button onclick="checkAnswer('Type IIa')">Type IIa</button>
+      <button onclick="checkAnswer('Mild Type IIa')">Mild Type IIa</button>
+      <button onclick="checkAnswer('Type IIb')">Type IIb</button>
+      <button onclick="checkAnswer('Mild Type IIb')">Mild Type IIb</button>
+      <button onclick="checkAnswer('Type III')">Type III</button>
+      <button onclick="checkAnswer('Mild Type III')">Mild Type III</button>
+      <button onclick="checkAnswer('Type IV')">Type IV</button>
+      <button onclick="checkAnswer('Mild Type IV')">Mild Type IV</button>
+      <button onclick="checkAnswer('Type V')">Type V</button>
+      <button onclick="checkAnswer('Mild Int IV/V')">Mild Int IV/V</button>
+      <button onclick="checkAnswer('Int IV/V')">Int IV/V</button>
+      <button onclick="checkAnswer('LpX Cholestatic')">LpX Cholestatic Pattern</button>
+      <button onclick="checkAnswer('Not a Fredrickson Phenotype')">Not a Fredrickson Phenotype</button>
+    </div>
+
+    <div id="feedback" class="feedback"></div>
+  </div>
+
 <script>
   const cvDescriptions = {
     "CV55": "Not a Fredrickson Phenotype",
